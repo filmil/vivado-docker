@@ -29,6 +29,7 @@ build.stamp: docker/Dockerfile Makefile install_config.txt
 		exit 1; \
 	fi
 	env DOCKER_BUILDKIT=1 docker build \
+		-t xilinx-vivado:latest \
 		--build-arg HOST_TOOL_ARCHIVE_NAME=${HOST_TOOL_ARCHIVE_NAME} \
 		--build-arg INSTALL_TARGET_DIR=${CONTAINER_INSTALL_TARGET_DIR} \
 		-f $< .

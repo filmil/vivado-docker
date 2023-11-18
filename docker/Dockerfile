@@ -88,8 +88,7 @@ RUN cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=.tar.gz $HOST_TOOL_ARCHI
 		--agree XilinxEULA,3rdPartyEULA \
 	&& rm -fr $XILINX_INSTALL_LOCATION/tmp/*
 
+VOLUME /src
 
-# Run xsetup with appropriate settings
-# Write a script that can start this thing from scratch. LD_PRELOAD and such.
-    
-
+COPY run.sh /
+RUN chmod a+x run.sh
