@@ -56,8 +56,8 @@ itself isn't any of the above by default, the containers you build kind of are. 
 allows me to build a dev environment that I know is identical across possible
 multiple installations.
 
-If you don't care about that, and I know that not everyone does and that you aren't
-required to care, you might as well install Vivado the usual way.
+If you don't care about that you might as well install Vivado the usual way.
+I understand that not everyone does and that you aren't required to care.
 
 # Prior art
 
