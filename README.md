@@ -46,6 +46,8 @@ The limitations I encountered are as follows:
 * You must download the installation package yourself from AMD, and make it
   available to the package by placing it inside the repository once you check
   it out. I do not see that changing.
+* The correct operation of this repo relies on downloading a missing Vivado
+  archive, which makes it very hard to test.
 
 # Prior art
 
