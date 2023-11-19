@@ -1,3 +1,8 @@
+# Copyright 2023 Google. All rights reserved.
+#
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 FROM ubuntu:22.04
 
 ARG INSTALL_TARGET_DIR
@@ -67,6 +72,7 @@ RUN apt-get install -y \
 	 	google-perftools \
 		default-jre
 
+# TODO: filmil - there is a more canonical way to set the locale.
 RUN env LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 \
 	&& echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
 
@@ -94,8 +100,8 @@ VOLUME /work
 COPY run.sh /
 RUN chmod a+x run.sh
 
-# This should be pulled into the general installation command above.
-# I didn't want to have to redo the layer.
+# TODO: filmil - This should be pulled into the general installation command
+# above. I didn't want to have to redo the layer.
 RUN apt-get install libtinfo5
 
 WORK /work

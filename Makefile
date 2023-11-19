@@ -1,3 +1,8 @@
+# Copyright 2023 Google. All rights reserved.
+#
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 # The name of the host tool archive.
 # Must be set as an env variable before make is invoked.
 HOST_TOOL_ARCHIVE_NAME := ""

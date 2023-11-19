@@ -1,4 +1,9 @@
 #! /bin/bash
+# Copyright 2023 Google. All rights reserved.
+#
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 # A script that runs the graphical vivado tool from within the built container.
 
 set -euo pipefail
