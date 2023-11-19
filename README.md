@@ -49,6 +49,16 @@ The limitations I encountered are as follows:
 * The correct operation of this repo relies on downloading a missing Vivado
   archive, which makes it very hard to test.
 
+# Why?
+
+I am a fan of repeatable, hermetic, and self-maintaining dev environments. While Docker
+itself isn't any of the above by default, the containers you build kind of are. This
+allows me to build a dev environment that I know is identical across possible
+multiple installations.
+
+If you don't care about that, and I know that not everyone does and that you aren't
+required to care, you might as well install Vivado the usual way.
+
 # Prior art
 
 This repo was not built in a vacuum. I consulted a number of resources out
