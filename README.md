@@ -2,8 +2,10 @@
 
 ## Summary
 
-[Docker](https://docker.io) installation of AMD's Vivado tooling for FPGA
+[Docker](https://docker.io) installation of AMD's [Vivado][viv] tooling for FPGA
 development. The specific version of the tooling is Vivado 2023.2.
+
+[viv]: https://en.wikipedia.org/wiki/Vivado
 
 ## Details
 
