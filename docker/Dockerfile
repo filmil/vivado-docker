@@ -89,6 +89,13 @@ RUN cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=.tar.gz $HOST_TOOL_ARCHI
 	&& rm -fr $XILINX_INSTALL_LOCATION/tmp/*
 
 VOLUME /src
+VOLUME /work
 
 COPY run.sh /
 RUN chmod a+x run.sh
+
+# This should be pulled into the general installation command above.
+# I didn't want to have to redo the layer.
+RUN apt-get install libtinfo5
+
+WORK /work
