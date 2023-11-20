@@ -51,7 +51,7 @@ The limitations I encountered are as follows:
 
 # Why?
 
-I am a fan of repeatable, hermetic, and self-maintaining dev environments. While Docker
+I am a fan of [repeatable, hermetic, and self-maintaining][bzl] dev environments. While Docker
 itself isn't any of the above by default, the containers you build kind of are. This
 allows me to build a dev environment that I know is identical across possible
 multiple installations.
@@ -82,4 +82,5 @@ there on the internet.
 [6]: https://blog.p4ck3t0.de/post/xilinx_docker/
 [7]: https://github.com/mviereck/x11docker
 [8]: https://github.com/esnet/xilinx-tools-docker/tree/main
+[bzl]: https://www.hdlfactory.com/tags/bazel/
 
