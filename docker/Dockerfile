@@ -104,4 +104,4 @@ RUN chmod a+x run.sh
 # above. I didn't want to have to redo the layer.
 RUN apt-get install libtinfo5
 
-WORK /work
+WORKDIR /work
