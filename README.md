@@ -28,7 +28,7 @@ same.
 
 * Git
 * Docker and buildkit
-* A download of the Unified installer.
+* A download of the Vivado Unified installer that you own a license to.
 
 # Limitations
 
@@ -51,13 +51,35 @@ The limitations I encountered are as follows:
 
 # Why?
 
-I am a fan of [repeatable, hermetic, and self-maintaining][bzl] dev environments. While Docker
-itself isn't any of the above by default, the containers you build kind of are. This
-allows me to build a dev environment that I know is identical across possible
-multiple installations.
+I am a fan of [repeatable, hermetic, and self-maintaining][bzl] dev
+environments. While Docker itself isn't any of the above by default, the
+containers you build kind of are. This allows me to build a dev environment
+that I know is identical across possible multiple installations.
 
-If you don't care about that you might as well install Vivado the usual way.
-I understand that not everyone does and that you aren't required to care.
+If you don't care about that you might as well install Vivado the usual way. I
+understand that not everyone does and that you aren't required to care.
+
+# Maintenance
+
+## Saving the image
+
+Once it has been built, you can save the image into an archive:
+
+```
+docker save > xilinx-vivado.docker.tgz
+```
+
+This archive can be moved between computers if you need to do that.
+Unfortunately the image is too large to be hosted reliably on Docker Hub.
+
+## Loading the image
+
+The command line below assumes that you have a docker image stored in the file
+named `xilinx-vivado.docker.tgz`
+
+```
+docker load -i xilinx-vivado.docker.tgz
+```
 
 # Prior art
 
