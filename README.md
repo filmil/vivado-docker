@@ -2,144 +2,193 @@
 
 # vivado-docker
 
+## Table of Contents
+* [Summary](#summary)
+* [Why?](#why)
+* [Prerequisites](#prerequisites)
+* [Limitations](#limitations)
+* [Maintenance](#maintenance)
+* [Troubleshooting/FAQ](#troubleshootingfaq)
+* [Contribution](#contribution)
+* [Prior art](#prior-art)
+
 ## Summary
 
-[Docker](https://docker.io) installation of AMD's [Vivado][viv] tooling for FPGA
-development. The specific version of the tooling is Vivado 2025.1.
+This repository provides a [Docker](https://docker.io) setup for AMD's [Vivado][viv]
+FPGA development tools, specifically version 2025.1.
 
 [viv]: https://en.wikipedia.org/wiki/Vivado
 
-To clarify: this repo contains nothing of the Vivado tooling. It contains a
-recipe that allows you to build your own Docker container from a free Vivado
-installation that you download. The built image is *not* available for download
-from the Docker Hub due to its size and to prevent any licensing issues.
+**Important:** This repository does not contain any Vivado software. Instead, it
+offers a recipe to build your own Docker container using a Vivado installer that
+you download from AMD. Due to its size and licensing restrictions, the built
+Docker image is not available for download from Docker Hub or other public
+registries.
 
-## Details
+The script builds a Docker container with a pre-configured installation of
+AMD's (formerly Xilinx) Vivado tools. Building the container is a
+time-consuming process (multiple hours), as is loading the image into Docker or
+saving it as an archive. Please allocate sufficient time.
 
-The script builds a Docker container with a ready-to-go installation of the
-AMD's (formerly: Xilinx) Vivado tooling for developing for FPGA devices.
+By default, the script installs a selection of features from the "Vivado ML
+Standard" edition, which is free to use for development.
 
-If you want to undertake a docker container build, arm yourself with patience.
-Even when nothing blows up, it takes multiple hours to complete the build. It
-then also takes multiple hours to load the image into Docker and/or save it
-into an image archive. It's not a job for the faint of the heart and for the
-lacking of the time.
+## Why?
 
-By default the script installs a limited number of features from the
-free-to-develop-with "Vivado ML Standard" software package.
+This project aims to provide a repeatable, hermetic, and self-maintaining
+development environment using Docker containers. This ensures a consistent Vivado
+setup across different machines. If this is not a concern for you, a standard
+Vivado installation may be sufficient.
 
-# Contribution
+[bzl]: https://www.hdlfactory.com/tags/bazel/
 
-# Prerequisites
+## Prerequisites
 
-* Git
-* Docker and buildkit
-* A download of the Vivado Unified installer that you own a license to.
+*   Git
+*   Docker (with BuildKit enabled for faster builds)
+*   A downloaded Vivado Unified Installer archive (for which you hold a valid
+    license).
 
-# Limitations
+## Limitations
 
-This not an end-all be-all solution for dockerizing Vivado. At least not yet.
-The limitations I encountered are as follows:
+This solution for dockerizing Vivado has the following known limitations:
 
-* It seems that not all installation options end up with a successful build of
-  a docker container. Some require access to a display server (X11), which I
-  don't know how to offer while a container is being built.
-* It is currently not possible to dockerize "Vivado ML Enterprise", which
-  requires a paid license.
-* The resulting container is enormous, with over 200GB in total.
-* The container takes more than an hour to build. You want to use `docker
-  build` with BuildKit to cut down on the build time considerably.
-* You must download the installation package yourself from AMD, and make it
-  available to the package by placing it inside the repository once you check
-  it out. I do not see that changing.
-* The correct operation of this repo relies on downloading a missing Vivado
-  archive, which makes it very hard to test.
+*   **Supported Vivado Edition:** This project currently only supports
+    dockerizing the "Vivado ML Standard" edition. "Vivado ML Enterprise" (which
+    requires a paid license and may have different installation mechanisms) is
+    not supported.
+*   **Installer Availability:** You must download the Vivado installer archive
+    yourself directly from AMD. This repository cannot and will not provide the
+    installer due to licensing and distribution restrictions.
+*   **Testing Constraints:** Thoroughly testing all possible configurations and
+    Vivado versions is challenging due to the dependency on specific, large
+    installer archives from AMD and the lengthy build times.
 
-# Why?
+## Maintenance
 
-I am a fan of [repeatable, hermetic, and self-maintaining][bzl] dev
-environments. While Docker itself isn't any of the above by default, the
-containers you build kind of are. This allows me to build a dev environment
-that I know is identical across possible multiple installations.
+### Preparing for the Build
 
-If you don't care about that you might as well install Vivado the usual way. I
-understand that not everyone does and that you aren't required to care.
+1.  **Download Vivado Installer:** Obtain the Vivado Unified Installer archive
+    from AMD. You are responsible for complying with all software licensing
+    terms.
+2.  **Place Installer in Repo:** Copy the downloaded archive into the top-level
+    directory of this repository. For Vivado 2025.1, the archive name is
+    typically `FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar`.
+3.  **Generate `install_config.txt`:**
+    *   Use the Xilinx setup program to generate the installation configuration
+        file: `` `xsetup -b SetupGen` ``.
+    *   During the generation process, select the "Vivado ML Standard" edition.
+    *   The setup program will create `install_config.txt` in
+        `$HOME/.Xilinx/`. Copy this file into the root directory of this
+        repository.
+    *   Edit the `Modules=` section within `install_config.txt` to enable the
+        specific Vivado components you require. Change the `0` to a `1` for
+        each desired module (e.g., `Vivado Simulator:1`).
 
-# Maintenance
+### Building the Container
 
-## Preparing for the build
+Navigate to the repository's root directory and run:
 
-* Download the archive from AMD. This ensures doing right by the software
-  license.
-* Place the archive (which for 2025.1 is a `.tar` archive for some reason, not
-  a `.tar.gz`) in the top level directory of this repo.
-  * The archive name this time around is
-    `FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar`.
-* Generate `install_config.txt`. The file `install_config.txt` is generated
-  from the Xilinx setup program as: `xsetup -b SetupGen`, and selecting the
-  Vivado ML Standard edition.
-
-  This is likely the only Vivado specific bit of info needed to create the
-  docker container. When you generate the configuration, it will automatically
-  be placed in `$HOME/.Xilinx/install_config.txt`, so it needs to be rescued
-  from there. Also make sure to edit the `Modules=` section, and turn on the
-  elements from `...:0` to `...:1` for those elements that you want installed.
-
-## Building
-
-From the repository's top directory, do:
-
-```
+```bash
 make HOST_TOOL_ARCHIVE_NAME=FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar build
 ```
 
-From here, be prepared to wait for a *long* time.  Container building can take
-hours, even with buildkit optimizations.
+The build process is lengthy. See the FAQ section for more details on build
+times and optimizations.
 
-The approximate durations of the long operations is as follows:
+Approximate durations for key steps:
 
-* 30min: Loading the archive into the build context.
-* 30min: Copying the archive into the container.
-* 30min: Unpacking the archive.
-* 30min: Installation.
-* 90min: Exporting layers.
+*   Loading archive into build context: ~30 min
+*   Copying archive into container: ~30 min
+*   Unpacking archive: ~30 min
+*   Vivado installation: ~30 min
+*   Exporting Docker image layers: ~90 min
 
-## Saving the image
+### Saving the Image
 
-Once it has been built, you can save the image into an archive:
+After a successful build, you can save the Docker image to a `.tar` archive:
 
-```
+```bash
 make save
 ```
 
-This archive can be moved between computers if you need to do that.
-Unfortunately the image is too large to be hosted reliably on Docker Hub, so it
-is not hosted there.
+This archive (e.g., `xilinx-vivado.docker.tgz`) can be transferred to other
+machines. The image is too large for Docker Hub and is not hosted there.
 
-## Loading the image
+### Loading the Image
 
-The command line below assumes that you have a docker image stored in the file
-named `xilinx-vivado.docker.tgz`
+To load the image from an archive:
 
-```
+```bash
 docker load -i xilinx-vivado.docker.tgz
 ```
 
-I noticed that loading an image this large is fraught with issues, and it may
-take you several tries to manage to do it. This seems to be inevitable.
+Note: Loading very large Docker images can sometimes be unreliable. See the FAQ
+section for more details.
 
-## Running Vivado from the image
+### Running Vivado from the Image
 
-Once you have a built Vivado docker image loaded into Docker, you can now do:
+Once the image is loaded into Docker, start Vivado using:
 
-```
+```bash
 make run
 ```
 
-to try it out. If you are running under a windowing system, you should eventually
-see the Vivado GUI open up.
+If you are on a system with a graphical interface (X11 forwarding configured),
+the Vivado GUI should launch.
 
-# Prior art
+## Troubleshooting/FAQ
+
+**Q: Why does the Docker build take so long (several hours)?**
+
+A: The Vivado installer is very large, and the installation process itself is
+complex. Several steps contribute to the long duration: loading the
+multi-gigabyte archive into the build context, copying it within the container,
+unpacking it, running the Vivado installer, and finally exporting the numerous
+layers of the resulting Docker image. Using Docker BuildKit (often enabled by
+default with `make build` or explicitly with `` `DOCKER_BUILDKIT=1 docker build ...` ``)
+is highly recommended as it can optimize some of these steps, but the overall
+process will still be lengthy.
+
+**Q: The Docker image is over 200GB. Is this normal?**
+
+A: Yes, this is unfortunately normal. Vivado is a comprehensive tool suite, and
+a full installation contains a very large number of files and libraries, leading
+to a massive Docker image.
+
+**Q: My Docker build fails with errors related to X11 or display servers. What can I do?**
+
+A: This script builds Vivado in a headless environment (without a graphical
+display). Some Vivado installation options or components might require an X11
+display server during the installation itself. This script does not support such
+options. Ensure your `install_config.txt` only selects components compatible
+with a headless installation. The default "Vivado ML Standard" components are
+generally compatible.
+
+**Q: How do I choose which Vivado components are installed?**
+
+A: You can customize the installation by editing the `install_config.txt` file
+*before* starting the build. This file is generated by the Xilinx setup program
+(`` `xsetup -b SetupGen` ``). In the `Modules=` section of this file, you can enable
+or disable specific components by changing their value from `:0` (disabled) to
+`:1` (enabled). For example, to enable the Vivado Simulator, ensure the line
+reads `Vivado Simulator:1`.
+
+**Q: `` `docker load -i xilinx-vivado.docker.tgz` `` fails or takes many attempts. Any advice?**
+
+A: Loading extremely large Docker image archives can be unreliable with some
+versions or configurations of Docker. Ensure you have sufficient disk space in
+your Docker daemon's storage location (check Docker settings). Trying the command
+again sometimes helps. If persistent issues occur, consider checking Docker
+daemon logs for more specific errors or consulting Docker community forums for
+advice on handling large images.
+
+## Contribution
+
+Contributions are welcome! Please feel free to submit pull requests or open
+issues.
+
+## Prior art
 
 This repo was not built in a vacuum. I consulted a number of resources out
 there on the internet.
@@ -150,8 +199,8 @@ there on the internet.
 * [Xilinx Vivado with Docker and Jenkins][2]. Does what it says on the tin.
 * [Xilinx Vivado/Vivado HLS][3] from CERN.
 * [Xilinx guides about Docker][4], which I'm not sure helped at all.
-* [AMD guildes about Vivado on Kubernetes et al.][5].
-* [Install Xilinx Vivado using Docker][6], another blog recount of the process.
+* [AMD guides about Vivado on Kubernetes et al.][5].
+* [Install Xilinx Vivado using Docker][6] [link broken?], another blog recount of the process.
 * [Run GUI applications in Docker or podman containers.][7]
 
 [1]: https://www.reddit.com/r/FPGA/comments/bk8b3n/dockerizing_xilinx_tools/
@@ -162,5 +211,3 @@ there on the internet.
 [6]: https://blog.p4ck3t0.de/post/xilinx_docker/
 [7]: https://github.com/mviereck/x11docker
 [8]: https://github.com/esnet/xilinx-tools-docker/tree/main
-[bzl]: https://www.hdlfactory.com/tags/bazel/
-
