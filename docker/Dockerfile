@@ -8,67 +8,70 @@ FROM ubuntu:22.04
 ARG INSTALL_TARGET_DIR
 ARG XSETUP_DIR
 ARG HOST_TOOL_ARCHIVE_NAME
+ARG VIVADO_VERSION
+ARG HOST_TOOL_ARCHIVE_EXTENSION
 
 ENV XILINX_INSTALL_LOCATION=$INSTALL_TARGET_DIR
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN echo "dash dash/sh boolean false" | debconf-set-selections 
+RUN echo "dash dash/sh boolean false" | debconf-set-selections
 RUN DEBIAN_FRONTEND=$DEBIAN_FRONTEND dpkg-reconfigure dash
 
 RUN apt-get update
 
 RUN apt-get install -y \
-		locales-all \
-		locales \
-	  	tofrodos \
-	  	iproute2 \
-		gawk \
-		xvfb \
-		git \
-		make \
-		net-tools \
-		libncurses5-dev \
-	  	update-inetd \
-	  	tftpd \
-		zlib1g-dev \
-	  	libssl-dev \
-	  	flex \
-	  	bison \
-	  	libselinux1 \
-	  	gnupg \
-	  	wget \
-		diffstat \
-		chrpath \
-		socat \
-		xterm \
 		autoconf \
-		libtool \
-		libtool-bin \
-		tar \
-	  	unzip \
-	  	texinfo \
-		zlib1g-dev \
-		gcc-multilib \
 		build-essential \
-		libsdl1.2-dev \
-		libglib2.0-dev \
-		screen \
-		pax \
-		gzip \
-		python3-gi \
-		less \
-		lsb-release \
+		chrpath \
+		cpio \
+		diffstat \
+		expect \
 		fakeroot \
+		gawk \
+		gcc-multilib \
+		git \
+		gzip \
+		less \
+		libglib2.0-dev \
 		libgtk2.0-0 \
 		libgtk2.0-dev \
-		cpio \
+		libncurses5-dev \
+		libsdl1.2-dev \
+		libtinfo5 \
+		libtool \
+		libtool-bin \
+		locales \
+		locales-all \
+		lsb-release \
+		make \
+		net-tools \
+		pax \
+		python3-gi \
 		rsync \
+		screen \
+		socat \
+		tar \
 		xorg \
-		expect \
+		xterm \
+		xvfb \
+		zlib1g-dev \
+		zlib1g-dev \
+	  	bison \
+	  	flex \
+	  	gnupg \
+	  	iproute2 \
+	  	libselinux1 \
+	  	libssl-dev \
+	  	texinfo \
+	  	tftpd \
+	  	tofrodos \
+	  	unzip \
+	  	update-inetd \
+	  	wget \
 		dos2unix
 
+# libboost-signals-dev
 RUN apt-get install -y \
-	 	# libboost-signals-dev \
 	 	google-perftools \
 		default-jre
 
@@ -84,10 +87,10 @@ COPY install_config.txt $XILINX_INSTALL_LOCATION/tmp
 
 # Unpack the archive locally.
 RUN cd $XILINX_INSTALL_LOCATION/tmp \
-	&& tar -xzf $(basename $HOST_TOOL_ARCHIVE_NAME) \
-	&& cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=.tar.gz $HOST_TOOL_ARCHIVE_NAME`"
+	&& tar -xf $(basename $HOST_TOOL_ARCHIVE_NAME) \
+	&& cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=$HOST_TOOL_ARCHIVE_EXTENSION $HOST_TOOL_ARCHIVE_NAME`"
 
-RUN cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=.tar.gz $HOST_TOOL_ARCHIVE_NAME`" \
+RUN cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=$HOST_TOOL_ARCHIVE_EXTENSION $HOST_TOOL_ARCHIVE_NAME`" \
     &&./xsetup --config $XILINX_INSTALL_LOCATION/tmp/install_config.txt \
 		--batch Install \
 		--location /opt/Xilinx \
@@ -99,9 +102,5 @@ VOLUME /work
 
 COPY run.sh /
 RUN chmod a+x run.sh
-
-# TODO: filmil - This should be pulled into the general installation command
-# above. I didn't want to have to redo the layer.
-RUN apt-get install libtinfo5
 
 WORKDIR /work

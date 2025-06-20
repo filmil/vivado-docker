@@ -1,28 +1,34 @@
+# Latest: 2025.1
+
 # vivado-docker
 
 ## Summary
 
 [Docker](https://docker.io) installation of AMD's [Vivado][viv] tooling for FPGA
-development. The specific version of the tooling is Vivado 2023.2.
+development. The specific version of the tooling is Vivado 2025.1.
 
 [viv]: https://en.wikipedia.org/wiki/Vivado
+
+To clarify: this repo contains nothing of the Vivado tooling. It contains a
+recipe that allows you to build your own Docker container from a free Vivado
+installation that you download. The built image is *not* available for download
+from the Docker Hub due to its size and to prevent any licensing issues.
 
 ## Details
 
 The script builds a Docker container with a ready-to-go installation of the
 AMD's (formerly: Xilinx) Vivado tooling for developing for FPGA devices.
 
-By default it installs a limited number of features from the
+If you want to undertake a docker container build, arm yourself with patience.
+Even when nothing blows up, it takes multiple hours to complete the build. It
+then also takes multiple hours to load the image into Docker and/or save it
+into an image archive. It's not a job for the faint of the heart and for the
+lacking of the time.
+
+By default the script installs a limited number of features from the
 free-to-develop-with "Vivado ML Standard" software package.
 
 # Contribution
-
-The contribution to the state of the art is that it is able to install Vivado
-ML Standard version 2023.2.
-
-This is the latest edition of the Vivado software at the time of this writing.
-I am not aware of any other packages that are available publicly which do the
-same.
 
 # Prerequisites
 
@@ -61,16 +67,54 @@ understand that not everyone does and that you aren't required to care.
 
 # Maintenance
 
+## Preparing for the build
+
+* Download the archive from AMD. This ensures doing right by the software
+  license.
+* Place the archive (which for 2025.1 is a `.tar` archive for some reason, not
+  a `.tar.gz`) in the top level directory of this repo.
+  * The archive name this time around is
+    `FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar`.
+* Generate `install_config.txt`. The file `install_config.txt` is generated
+  from the Xilinx setup program as: `xsetup -b SetupGen`, and selecting the
+  Vivado ML Standard edition.
+
+  This is likely the only Vivado specific bit of info needed to create the
+  docker container. When you generate the configuration, it will automatically
+  be placed in `$HOME/.Xilinx/install_config.txt`, so it needs to be rescued
+  from there. Also make sure to edit the `Modules=` section, and turn on the
+  elements from `...:0` to `...:1` for those elements that you want installed.
+
+## Building
+
+From the repository's top directory, do:
+
+```
+make HOST_TOOL_ARCHIVE_NAME=FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar build
+```
+
+From here, be prepared to wait for a *long* time.  Container building can take
+hours, even with buildkit optimizations.
+
+The approximate durations of the long operations is as follows:
+
+* 30min: Loading the archive into the build context.
+* 30min: Copying the archive into the container.
+* 30min: Unpacking the archive.
+* 30min: Installation.
+* 90min: Exporting layers.
+
 ## Saving the image
 
 Once it has been built, you can save the image into an archive:
 
 ```
-docker save > xilinx-vivado.docker.tgz
+make save
 ```
 
 This archive can be moved between computers if you need to do that.
-Unfortunately the image is too large to be hosted reliably on Docker Hub.
+Unfortunately the image is too large to be hosted reliably on Docker Hub, so it
+is not hosted there.
 
 ## Loading the image
 
@@ -80,6 +124,20 @@ named `xilinx-vivado.docker.tgz`
 ```
 docker load -i xilinx-vivado.docker.tgz
 ```
+
+I noticed that loading an image this large is fraught with issues, and it may
+take you several tries to manage to do it. This seems to be inevitable.
+
+## Running Vivado from the image
+
+Once you have a built Vivado docker image loaded into Docker, you can now do:
+
+```
+make run
+```
+
+to try it out. If you are running under a windowing system, you should eventually
+see the Vivado GUI open up.
 
 # Prior art
 
