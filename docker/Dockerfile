@@ -84,6 +84,9 @@ RUN mkdir -p $XILINX_INSTALL_LOCATION/tmp
 # Copy archive into the container
 COPY $HOST_TOOL_ARCHIVE_NAME $XILINX_INSTALL_LOCATION/tmp
 COPY install_config.txt $XILINX_INSTALL_LOCATION/tmp
+RUN echo --- install_config.txt: \
+    && cat $XILINX_INSTALL_LOCATION/tmp/install_config.txt \
+    && echo ---
 
 # Unpack the archive locally.
 RUN cd $XILINX_INSTALL_LOCATION/tmp \
