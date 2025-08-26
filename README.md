@@ -203,6 +203,7 @@ there on the internet.
 * [AMD guides about Vivado on Kubernetes et al.][5].
 * [Install Xilinx Vivado using Docker][6] [link broken?], another blog recount of the process.
 * [Run GUI applications in Docker or podman containers.][7]
+* [Dockerized Vivado ML Enterprise by esnet][esnet].
 
 [1]: https://www.reddit.com/r/FPGA/comments/bk8b3n/dockerizing_xilinx_tools/
 [2]: https://www.starwaredesign.com/index.php/blog/64-fpga-meets-devops-xilinx-vivado-and-jenkins-with-docker
@@ -210,5 +211,6 @@ there on the internet.
 [4]: https://xilinx.github.io/Xilinx_Container_Runtime/docker.html
 [5]: https://docs.xilinx.com/r/en-US/Xilinx_Kubernetes_Device_Plugin/1.-Install-Docker
 [6]: https://blog.p4ck3t0.de/post/xilinx_docker/
+[esnet]: https://github.com/esnet/xilinx-tools-docker
 [7]: https://github.com/mviereck/x11docker
 [8]: https://github.com/esnet/xilinx-tools-docker/tree/main
