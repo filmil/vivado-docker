@@ -56,7 +56,8 @@ This solution for dockerizing Vivado has the following known limitations:
 *   **Supported Vivado Edition:** This project currently only supports
     dockerizing the "Vivado ML Standard" edition. "Vivado ML Enterprise" (which
     requires a paid license and may have different installation mechanisms) is
-    not supported.
+    not supported. The repository https://github.com/esnet/xilinx-tools-docker seems
+    to do the same, but for Vivado ML Enterprise. I have not tested this.
 *   **Installer Availability:** You must download the Vivado installer archive
     yourself directly from AMD. This repository cannot and will not provide the
     installer due to licensing and distribution restrictions.
