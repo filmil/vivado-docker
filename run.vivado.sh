@@ -26,6 +26,7 @@ docker run \
   -v "${PWD}:/work:rw" \
   -e DISPLAY="${DISPLAY}" \
   -e HOME="/work" \
+  -e _JAVA_AWT_WM_NONREPARENTING=1 \
   --net=host \
   xilinx-vivado:${VIVADO_VERSION} \
   /bin/bash -c \
