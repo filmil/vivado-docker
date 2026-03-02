@@ -1,4 +1,4 @@
-# Latest: 2025.1
+# Latest: 2025.2
 
 # vivado-docker
 
@@ -7,6 +7,7 @@
 * [Why?](#why)
 * [Prerequisites](#prerequisites)
 * [Limitations](#limitations)
+* [Apple Silicon / Rosetta Support](#apple-silicon--rosetta-support)
 * [Maintenance](#maintenance)
 * [Troubleshooting/FAQ](#troubleshootingfaq)
 * [Contribution](#contribution)
@@ -15,7 +16,7 @@
 ## Summary
 
 This repository provides a [Docker](https://docker.io) setup for AMD's [Vivado][viv]
-FPGA development tools, specifically version 2025.1.
+FPGA development tools, specifically version 2025.2.
 
 [viv]: https://en.wikipedia.org/wiki/Vivado
 
@@ -65,6 +66,28 @@ This solution for dockerizing Vivado has the following known limitations:
     Vivado versions is challenging due to the dependency on specific, large
     installer archives from AMD and the lengthy build times.
 
+## Apple Silicon / Rosetta Support
+
+This setup works on Apple Silicon Macs (M1/M2/M3/M4) via Rosetta x86_64
+emulation in Docker (OrbStack or Docker Desktop). Key adaptations:
+
+*   **`--platform linux/amd64`** is added to all Docker commands (build & run)
+*   **libudev stub**: Vivado's license manager and WebTalk telemetry call
+    `udev_enumerate_scan_devices()` which crashes under Rosetta with
+    `realloc(): invalid pointer`. A stub shared library at `/opt/udev_stub.so`
+    is built into the image and loaded via `LD_PRELOAD` automatically by
+    `run.vivado.sh` when running on ARM64 hosts.
+*   **`XILINX_LOCAL_USER_DATA=no`** disables WebTalk telemetry (the
+    `config_webtalk` command was removed in Vivado 2025.x).
+*   **`launch_runs` may crash** under Rosetta because it spawns child processes
+    that also trigger the libudev crash. For synthesis, prefer in-process
+    commands (`synth_design`, `place_design`, `route_design`) over `launch_runs`
+    in your TCL scripts.
+
+On native x86_64 hosts, the Rosetta workarounds are harmless but unnecessary.
+`run.vivado.sh` auto-detects the host architecture and only enables
+`LD_PRELOAD` on ARM64.
+
 ## Maintenance
 
 ### Preparing for the Build
@@ -73,8 +96,8 @@ This solution for dockerizing Vivado has the following known limitations:
     from AMD. You are responsible for complying with all software licensing
     terms.
 2.  **Place Installer in Repo:** Copy the downloaded archive into the top-level
-    directory of this repository. For Vivado 2025.1, the archive name is
-    typically `FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar`.
+    directory of this repository. For Vivado 2025.2, the archive name is
+    typically `FPGAs_AdaptiveSoCs_Unified_SDI_2025.2_1114_2157.tar`.
 3.  **Generate `install_config.txt`:**
     *   Use the Xilinx setup program to generate the installation configuration
         file: `` `xsetup -b SetupGen` ``.
@@ -84,26 +107,25 @@ This solution for dockerizing Vivado has the following known limitations:
         repository.
     *   Edit the `Modules=` section within `install_config.txt` to enable the
         specific Vivado components you require. Change the `0` to a `1` for
-        each desired module (e.g., `Vivado Simulator:1`).
+        each desired module (e.g., `Artix-7 FPGAs:1`).
 
 ### Building the Container
 
 Navigate to the repository's root directory and run:
 
 ```bash
-make HOST_TOOL_ARCHIVE_NAME=FPGAs_AdaptiveSoCs_Unified_SDI_2025.1_0530_0145.tar build
+make HOST_TOOL_ARCHIVE_NAME=FPGAs_AdaptiveSoCs_Unified_SDI_2025.2_1114_2157.tar build
 ```
 
-The build process is lengthy. See the FAQ section for more details on build
-times and optimizations.
+The Dockerfile uses `--mount=type=bind` to access the installer archive during
+build without copying it into a Docker layer. This significantly reduces peak
+disk usage compared to the traditional `COPY` approach (~130 GB peak vs ~290 GB).
 
-Approximate durations for key steps:
+Approximate durations:
 
-*   Loading archive into build context: ~30 min
-*   Copying archive into container: ~30 min
-*   Unpacking archive: ~30 min
+*   Extracting archive: ~30 min
 *   Vivado installation: ~30 min
-*   Exporting Docker image layers: ~90 min
+*   Docker layer export: ~30 min
 
 ### Saving the Image
 
@@ -124,38 +146,53 @@ To load the image from an archive:
 docker load -i xilinx-vivado.docker.tgz
 ```
 
-Note: Loading very large Docker images can sometimes be unreliable. See the FAQ
+Note: Loading very large Docker image archives can sometimes be unreliable. See the FAQ
 section for more details.
 
 ### Running Vivado from the Image
 
-Once the image is loaded into Docker, start Vivado using:
+Once the image is loaded into Docker, start the interactive Vivado GUI using:
 
 ```bash
 make run
 ```
 
-If you are on a system with a graphical interface (X11 forwarding configured),
-the Vivado GUI should launch.
+Or use `run.vivado.sh` directly with environment overrides:
+
+```bash
+# Interactive TCL console
+VIVADO_CMD="vivado -mode tcl" ./run.vivado.sh
+
+# Batch synthesis
+SRC_DIR=/path/to/fpga/project WORK_DIR=/path/to/output \
+  VIVADO_CMD="vivado -mode batch -source /src/build.tcl" \
+  ./run.vivado.sh
+```
+
+**`run.vivado.sh` environment variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VIVADO_VERSION` | `2025.2` | Vivado version to use |
+| `SRC_DIR` | current directory | Host directory mounted at `/src` |
+| `WORK_DIR` | current directory | Host directory mounted at `/work` |
+| `VIVADO_CMD` | `vivado` (GUI) | Command to run inside container |
+| `ROSETTA` | auto-detect | Set to `1` to force libudev stub |
 
 ## Troubleshooting/FAQ
 
 **Q: Why does the Docker build take so long (several hours)?**
 
 A: The Vivado installer is very large, and the installation process itself is
-complex. Several steps contribute to the long duration: loading the
-multi-gigabyte archive into the build context, copying it within the container,
-unpacking it, running the Vivado installer, and finally exporting the numerous
-layers of the resulting Docker image. Using Docker BuildKit (often enabled by
-default with `make build` or explicitly with `` `DOCKER_BUILDKIT=1 docker build ...` ``)
-is highly recommended as it can optimize some of these steps, but the overall
-process will still be lengthy.
+complex. Using `--mount=type=bind` (enabled by default) avoids the worst
+bottleneck (copying the ~96 GB archive into a Docker layer), but extraction and
+installation still take significant time.
 
-**Q: The Docker image is over 200GB. Is this normal?**
+**Q: The Docker image is very large. Is this normal?**
 
-A: Yes, this is unfortunately normal. Vivado is a comprehensive tool suite, and
-a full installation contains a very large number of files and libraries, leading
-to a massive Docker image.
+A: A full install is 200+ GB. By selecting only the device families you need in
+`install_config.txt`, you can reduce this significantly. An Artix-7-only install
+produces a ~30-40 GB image.
 
 **Q: My Docker build fails with errors related to X11 or display servers. What can I do?**
 
@@ -174,6 +211,24 @@ A: You can customize the installation by editing the `install_config.txt` file
 or disable specific components by changing their value from `:0` (disabled) to
 `:1` (enabled). For example, to enable the Vivado Simulator, ensure the line
 reads `Vivado Simulator:1`.
+
+**Q: Vivado crashes with `realloc(): invalid pointer` on Apple Silicon.**
+
+A: This is a known issue with Rosetta x86_64 emulation. Vivado's license
+manager calls `udev_enumerate_scan_devices()` which triggers a crash in glibc's
+allocator under Rosetta. The image includes a libudev stub at
+`/opt/udev_stub.so` that provides no-op implementations. `run.vivado.sh`
+auto-detects ARM64 hosts and sets `LD_PRELOAD` automatically. If running Vivado
+manually, add: `export LD_PRELOAD=/opt/udev_stub.so` before sourcing
+`settings64.sh`.
+
+**Q: `launch_runs` crashes but `synth_design` works. Why?**
+
+A: `launch_runs` spawns child processes which each independently load
+`libudev`. Under Rosetta, these children crash even with `LD_PRELOAD` set
+(the preload may not propagate correctly to all children). Use in-process TCL
+commands instead: `synth_design`, `opt_design`, `place_design`, `route_design`,
+`write_bitstream`.
 
 **Q: `` `docker load -i xilinx-vivado.docker.tgz` `` fails or takes many attempts. Any advice?**
 

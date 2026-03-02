@@ -2,108 +2,124 @@
 #
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+#
+# Updated for Vivado 2025.2 with Apple Silicon (Rosetta) support.
+#
+# Key changes from the original:
+#   - Uses --mount=type=bind to avoid duplicating the ~96 GB installer archive
+#     in Docker layers (saves ~100 GB peak disk during build)
+#   - Adds --platform linux/amd64 for Apple Silicon hosts
+#   - Builds libudev stub to prevent crashes under Rosetta x86_64 emulation
+#   - Single-layer apt-get install for smaller image
+#
+# Disk budget (approximate, Artix-7 only):
+#   Extracted archive (temp): ~96 GB (deleted after install)
+#   Installed Vivado: ~25-35 GB (final image)
+#   Final image: ~30-40 GB
 
-FROM ubuntu:22.04
+# syntax=docker/dockerfile:1
+FROM --platform=linux/amd64 ubuntu:22.04
 
-ARG INSTALL_TARGET_DIR
-ARG XSETUP_DIR
+ARG INSTALL_TARGET_DIR=/opt/Xilinx
 ARG HOST_TOOL_ARCHIVE_NAME
-ARG VIVADO_VERSION
-ARG HOST_TOOL_ARCHIVE_EXTENSION
+ARG HOST_TOOL_ARCHIVE_EXTENSION=.tar
+ARG VIVADO_VERSION=2025.2
 
 ENV XILINX_INSTALL_LOCATION=$INSTALL_TARGET_DIR
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN echo "dash dash/sh boolean false" | debconf-set-selections
-RUN DEBIAN_FRONTEND=$DEBIAN_FRONTEND dpkg-reconfigure dash
+# Use bash instead of dash
+RUN echo "dash dash/sh boolean false" | debconf-set-selections \
+    && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 
-RUN apt-get update
+# Install all dependencies in a single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        autoconf \
+        build-essential \
+        ca-certificates \
+        chrpath \
+        cpio \
+        diffstat \
+        dos2unix \
+        expect \
+        fakeroot \
+        gawk \
+        gcc-multilib \
+        git \
+        gnupg \
+        google-perftools \
+        gzip \
+        iproute2 \
+        less \
+        libglib2.0-dev \
+        libgtk2.0-0 \
+        libgtk2.0-dev \
+        libncurses5-dev \
+        libsdl1.2-dev \
+        libselinux1 \
+        libssl-dev \
+        libtinfo5 \
+        libtool \
+        libtool-bin \
+        locales \
+        lsb-release \
+        make \
+        net-tools \
+        default-jre \
+        pax \
+        python3-gi \
+        rsync \
+        screen \
+        socat \
+        tar \
+        texinfo \
+        tofrodos \
+        unzip \
+        wget \
+        xterm \
+        xvfb \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y \
-		autoconf \
-		build-essential \
-		chrpath \
-		cpio \
-		diffstat \
-		expect \
-		fakeroot \
-		gawk \
-		gcc-multilib \
-		git \
-		gzip \
-		less \
-		libglib2.0-dev \
-		libgtk2.0-0 \
-		libgtk2.0-dev \
-		libncurses5-dev \
-		libsdl1.2-dev \
-		libtinfo5 \
-		libtool \
-		libtool-bin \
-		locales \
-		locales-all \
-		lsb-release \
-		make \
-		net-tools \
-		pax \
-		python3-gi \
-		rsync \
-		screen \
-		socat \
-		tar \
-		xorg \
-		xterm \
-		xvfb \
-		zlib1g-dev \
-		zlib1g-dev \
-	  	bison \
-	  	flex \
-	  	gnupg \
-	  	iproute2 \
-	  	libselinux1 \
-	  	libssl-dev \
-	  	texinfo \
-	  	tftpd \
-	  	tofrodos \
-	  	unzip \
-	  	update-inetd \
-	  	wget \
-		dos2unix
-
-# libboost-signals-dev
-RUN apt-get install -y \
-	 	google-perftools \
-		default-jre
-
-# TODO: filmil - there is a more canonical way to set the locale.
+# Set locale
 RUN env LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 \
-	&& echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
+    && echo 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
 
-RUN mkdir -p $XILINX_INSTALL_LOCATION/tmp
+# Build libudev stub for Rosetta compatibility.
+# Vivado's license manager and WebTalk call udev_enumerate_scan_devices()
+# which crashes under Rosetta x86_64 emulation with:
+#   "realloc(): invalid pointer" / "mremap_chunk(): invalid pointer"
+# This stub provides no-op implementations that return empty device lists.
+# Use via: LD_PRELOAD=/opt/udev_stub.so vivado ...
+# On native x86_64 hosts this stub is harmless but unnecessary.
+COPY docker/udev_stub.c /tmp/udev_stub.c
+RUN gcc -shared -fPIC -o /opt/udev_stub.so /tmp/udev_stub.c \
+    && rm /tmp/udev_stub.c
 
-# Copy archive into the container
-COPY $HOST_TOOL_ARCHIVE_NAME $XILINX_INSTALL_LOCATION/tmp
-COPY install_config.txt $XILINX_INSTALL_LOCATION/tmp
-RUN echo --- install_config.txt: \
-    && cat $XILINX_INSTALL_LOCATION/tmp/install_config.txt \
-    && echo ---
+# Copy only the small config file (not the ~96 GB archive!)
+COPY install_config.txt /tmp/install_config.txt
 
-# Unpack the archive locally.
-RUN cd $XILINX_INSTALL_LOCATION/tmp \
-	&& tar -xf $(basename $HOST_TOOL_ARCHIVE_NAME) \
-	&& cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=$HOST_TOOL_ARCHIVE_EXTENSION $HOST_TOOL_ARCHIVE_NAME`"
+# Extract archive and install Vivado in a SINGLE layer using bind mount.
+# The archive is mounted read-only from the build context — never copied
+# into an image layer. Extraction + install + cleanup happen atomically,
+# so only the final installed files persist.
+RUN --mount=type=bind,source=${HOST_TOOL_ARCHIVE_NAME},target=/tmp/archive.tar \
+    mkdir -p /tmp/vivado-extract \
+    && echo "Extracting archive (this takes a while)..." \
+    && tar -xf /tmp/archive.tar -C /tmp/vivado-extract \
+    && echo "Running xsetup batch install..." \
+    && cd /tmp/vivado-extract/$(ls /tmp/vivado-extract) \
+    && ./xsetup \
+        --config /tmp/install_config.txt \
+        --batch Install \
+        --location ${INSTALL_TARGET_DIR} \
+        --agree XilinxEULA,3rdPartyEULA \
+    && echo "Cleaning up extracted archive..." \
+    && rm -rf /tmp/vivado-extract /tmp/install_config.txt
 
-RUN cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=$HOST_TOOL_ARCHIVE_EXTENSION $HOST_TOOL_ARCHIVE_NAME`" \
-    &&./xsetup --config $XILINX_INSTALL_LOCATION/tmp/install_config.txt \
-		--batch Install \
-		--location /opt/Xilinx \
-		--agree XilinxEULA,3rdPartyEULA \
-	&& rm -fr $XILINX_INSTALL_LOCATION/tmp/*
+COPY run.sh /
+RUN chmod a+x /run.sh
 
 VOLUME /src
 VOLUME /work
-
-COPY run.sh /
-RUN chmod a+x run.sh
-
 WORKDIR /work
