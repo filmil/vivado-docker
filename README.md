@@ -99,8 +99,8 @@ times and optimizations.
 
 Approximate durations for key steps:
 
-*   Loading archive into build context: ~30 min
-*   Copying archive into container: ~30 min
+*   Loading archive into build context: ~0 min (skipped due to bind mount)
+*   Copying archive into container: ~0 min (skipped due to bind mount)
 *   Unpacking archive: ~30 min
 *   Vivado installation: ~30 min
 *   Exporting Docker image layers: ~90 min
@@ -143,13 +143,12 @@ the Vivado GUI should launch.
 **Q: Why does the Docker build take so long (several hours)?**
 
 A: The Vivado installer is very large, and the installation process itself is
-complex. Several steps contribute to the long duration: loading the
-multi-gigabyte archive into the build context, copying it within the container,
-unpacking it, running the Vivado installer, and finally exporting the numerous
-layers of the resulting Docker image. Using Docker BuildKit (often enabled by
-default with `make build` or explicitly with `` `DOCKER_BUILDKIT=1 docker build ...` ``)
-is highly recommended as it can optimize some of these steps, but the overall
-process will still be lengthy.
+complex. Several steps contribute to the long duration: unpacking the archive,
+running the Vivado installer, and finally exporting the numerous
+layers of the resulting Docker image. (Note: Using Docker BuildKit with bind mounts,
+as done in this repository, significantly speeds up the process by skipping the
+need to load the multi-gigabyte archive into the build context and copy it into
+the container. This optimization was contributed by @gretel in PR #5). The overall process will still be lengthy.
 
 **Q: The Docker image is over 200GB. Is this normal?**
 

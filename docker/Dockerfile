@@ -89,6 +89,7 @@ COPY install_config.txt /tmp/install_config.txt
 # The archive is mounted read-only from the build context — never copied
 # into an image layer. Extraction + install + cleanup happen atomically,
 # so only the final installed files persist.
+# Credit: This bind-mount optimization was contributed by @gretel in PR #5.
 RUN --mount=type=bind,source=${HOST_TOOL_ARCHIVE_NAME},target=/tmp/archive.tar \
     mkdir -p /tmp/vivado-extract \
     && echo "Extracting archive (this takes a while)..." \
