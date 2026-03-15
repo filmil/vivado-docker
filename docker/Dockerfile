@@ -18,9 +18,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN echo "dash dash/sh boolean false" | debconf-set-selections
 RUN DEBIAN_FRONTEND=$DEBIAN_FRONTEND dpkg-reconfigure dash
 
-RUN apt-get update
-
-RUN apt-get install -y \
+# Single-layer apt-get install to reduce image size.
+# Credit: This single-layer optimization was contributed by @gretel in PR #5.
+RUN apt-get update && apt-get install -y \
 		autoconf \
 		build-essential \
 		chrpath \
@@ -69,12 +69,10 @@ RUN apt-get install -y \
 	  	unzip \
 	  	update-inetd \
 	  	wget \
-		dos2unix
-
-# libboost-signals-dev
-RUN apt-get install -y \
+		dos2unix \
 	 	google-perftools \
-		default-jre
+		default-jre \
+	&& rm -rf /var/lib/apt/lists/*
 
 # TODO: filmil - there is a more canonical way to set the locale.
 RUN env LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 \
