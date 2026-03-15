@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Copyright 2023 Google. All rights reserved.
 #
 # Use of this source code is governed by a BSD-style license that can be
@@ -81,24 +82,26 @@ RUN env LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 \
 
 RUN mkdir -p $XILINX_INSTALL_LOCATION/tmp
 
-# Copy archive into the container
-COPY $HOST_TOOL_ARCHIVE_NAME $XILINX_INSTALL_LOCATION/tmp
-COPY install_config.txt $XILINX_INSTALL_LOCATION/tmp
-RUN echo --- install_config.txt: \
-    && cat $XILINX_INSTALL_LOCATION/tmp/install_config.txt \
-    && echo ---
+# Copy only the small config file (not the ~96 GB archive!)
+COPY install_config.txt /tmp/install_config.txt
 
-# Unpack the archive locally.
-RUN cd $XILINX_INSTALL_LOCATION/tmp \
-	&& tar -xf $(basename $HOST_TOOL_ARCHIVE_NAME) \
-	&& cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=$HOST_TOOL_ARCHIVE_EXTENSION $HOST_TOOL_ARCHIVE_NAME`"
-
-RUN cd "$XILINX_INSTALL_LOCATION/tmp/`basename --suffix=$HOST_TOOL_ARCHIVE_EXTENSION $HOST_TOOL_ARCHIVE_NAME`" \
-    &&./xsetup --config $XILINX_INSTALL_LOCATION/tmp/install_config.txt \
-		--batch Install \
-		--location /opt/Xilinx \
-		--agree XilinxEULA,3rdPartyEULA \
-	&& rm -fr $XILINX_INSTALL_LOCATION/tmp/*
+# Extract archive and install Vivado in a SINGLE layer using bind mount.
+# The archive is mounted read-only from the build context — never copied
+# into an image layer. Extraction + install + cleanup happen atomically,
+# so only the final installed files persist.
+RUN --mount=type=bind,source=${HOST_TOOL_ARCHIVE_NAME},target=/tmp/archive.tar \
+    mkdir -p /tmp/vivado-extract \
+    && echo "Extracting archive (this takes a while)..." \
+    && tar -xf /tmp/archive.tar -C /tmp/vivado-extract \
+    && echo "Running xsetup batch install..." \
+    && cd /tmp/vivado-extract/$(ls /tmp/vivado-extract) \
+    && ./xsetup \
+        --config /tmp/install_config.txt \
+        --batch Install \
+        --location /opt/Xilinx \
+        --agree XilinxEULA,3rdPartyEULA \
+    && echo "Cleaning up extracted archive..." \
+    && rm -rf /tmp/vivado-extract /tmp/install_config.txt
 
 VOLUME /src
 VOLUME /work
