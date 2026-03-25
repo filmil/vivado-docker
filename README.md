@@ -135,8 +135,27 @@ Once the image is loaded into Docker, start Vivado using:
 make run
 ```
 
-If you are on a system with a graphical interface (X11 forwarding configured),
-the Vivado GUI should launch.
+Or use `run.vivado.sh` directly with environment overrides:
+
+```bash
+# Interactive TCL console
+VIVADO_CMD="vivado -mode tcl" ./run.vivado.sh
+
+# Batch synthesis
+SRC_DIR=/path/to/fpga/project WORK_DIR=/path/to/output \
+  VIVADO_CMD="vivado -mode batch -source /src/build.tcl" \
+  ./run.vivado.sh
+```
+
+**`run.vivado.sh` environment variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VIVADO_VERSION` | `2025.2` | Vivado version to use |
+| `SRC_DIR` | current directory | Host directory mounted at `/src` |
+| `WORK_DIR` | current directory | Host directory mounted at `/work` |
+| `VIVADO_CMD` | `vivado` (GUI) | Command to run inside container |
+| `ROSETTA` | auto-detect | Set to `1` to force libudev stub |
 
 ## Troubleshooting/FAQ
 
