@@ -37,6 +37,7 @@ build.stamp: docker/Dockerfile Makefile install_config.txt
 		exit 1; \
 	fi
 	env DOCKER_BUILDKIT=1 docker build \
+		--platform linux/amd64 \
 		-t xilinx-vivado:${VIVADO_VERSION} \
 		--build-arg HOST_TOOL_ARCHIVE_NAME=${HOST_TOOL_ARCHIVE_NAME} \
 		--build-arg HOST_TOOL_ARCHIVE_EXTENSION=${HOST_TOOL_ARCHIVE_EXTENSION} \

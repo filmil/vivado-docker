@@ -4,7 +4,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-FROM ubuntu:22.04
+# hadolint ignore=DL3029
+FROM --platform=linux/amd64 ubuntu:22.04
 
 ARG INSTALL_TARGET_DIR=/opt/Xilinx
 ARG HOST_TOOL_ARCHIVE_NAME
@@ -35,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         expect \
         fakeroot \
         gawk \
+        gcc \
         gcc-multilib \
         git \
         gnupg \
@@ -74,6 +76,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set locale
 RUN env LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 \
     && printf 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
+
+# Build libudev stub for Rosetta compatibility.
+# Vivado's license manager and WebTalk call udev_enumerate_scan_devices()
+# which crashes under Rosetta x86_64 emulation with:
+#   "realloc(): invalid pointer" / "mremap_chunk(): invalid pointer"
+# This stub provides no-op implementations that return empty device lists.
+# Use via: LD_PRELOAD=/opt/udev_stub.so vivado ...
+# On native x86_64 hosts this stub is harmless but unnecessary.
+COPY docker/udev_stub.c /tmp/udev_stub.c
+RUN gcc -shared -fPIC -o /opt/udev_stub.so /tmp/udev_stub.c \
+    && rm /tmp/udev_stub.c
+
+RUN mkdir -p $XILINX_INSTALL_LOCATION/tmp
 
 # Copy only the small config file (not the ~96 GB archive!)
 COPY install_config.txt /tmp/install_config.txt
