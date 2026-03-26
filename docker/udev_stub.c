@@ -8,8 +8,11 @@
  * of the udev functions used by Vivado, returning empty results.
  *
  * On native x86_64 this stub is never loaded — zero impact on Linux.
- * Under Rosetta, device enumeration returns empty (no JTAG/USB probes),
- * but USB passthrough doesn't work in Rosetta containers anyway.
+ * Under Rosetta (Apple Silicon), loading this stub disables udev-based
+ * hardware discovery: Vivado cannot enumerate JTAG cables or USB debug
+ * probes. Hardware programming and debug are unavailable. Synthesis,
+ * simulation, and bitstream generation are unaffected.
+ * USB passthrough into Rosetta containers doesn't work regardless.
  *
  * Usage: LD_PRELOAD=/opt/udev_stub.so vivado ...
  *
