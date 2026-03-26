@@ -52,14 +52,26 @@ fi
 # For batch synthesis: VIVADO_CMD="vivado -mode batch -source /src/build.tcl"
 VIVADO_CMD="${VIVADO_CMD:-vivado}"
 
+# Conditional docker flags for platform differences
+DOCKER_ARGS=()
+if [[ -d /tmp/.X11-unix ]]; then
+  DOCKER_ARGS+=(-v /tmp/.X11-unix:/tmp/.X11-unix:ro)
+fi
+if [[ "$(uname -s)" == "Linux" ]]; then
+  DOCKER_ARGS+=(--net=host)
+fi
+
 docker run \
   --platform linux/amd64 \
   "${INTERACTIVE[@]}" \
   --rm \
+  -u "$(id -u):$(id -g)" \
+  "${DOCKER_ARGS[@]}" \
   -v "${SRC_DIR}:/src:rw" \
   -v "${WORK_DIR}:/work:rw" \
   -e HOME="/work" \
   -e DISPLAY="${DISPLAY:-}" \
+  -e _JAVA_AWT_WM_NONREPARENTING=1 \
   -e XILINX_LOCAL_USER_DATA=no \
   "xilinx-vivado:${VIVADO_VERSION}" \
   /bin/bash -c \
