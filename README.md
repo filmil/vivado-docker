@@ -198,8 +198,10 @@ reads `Vivado Simulator:1`.
 A: This is a known issue with Rosetta x86\_64 emulation. Vivado's license
 manager calls `udev_enumerate_scan_devices()` which triggers a crash in glibc's
 allocator under Rosetta. The image includes a libudev stub at
-`/opt/udev_stub.so` that provides no-op implementations. When running Vivado,
-add: `export LD_PRELOAD=/opt/udev_stub.so` before sourcing `settings64.sh`.
+`/opt/udev_stub.so` that provides no-op implementations. `run.vivado.sh`
+applies this automatically on ARM64 hosts. If running Vivado manually inside
+the container, add: `export LD_PRELOAD=/opt/udev_stub.so` before sourcing
+`settings64.sh`.
 
 **Q: `launch_runs` crashes but `synth_design` works. Why?**
 
