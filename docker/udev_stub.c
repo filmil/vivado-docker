@@ -7,6 +7,10 @@
  * crash in glibc under Rosetta. This stub provides no-op implementations
  * of the udev functions used by Vivado, returning empty results.
  *
+ * On native x86_64 this stub is never loaded — zero impact on Linux.
+ * Under Rosetta, device enumeration returns empty (no JTAG/USB probes),
+ * but USB passthrough doesn't work in Rosetta containers anyway.
+ *
  * Usage: LD_PRELOAD=/opt/udev_stub.so vivado ...
  *
  * Build: gcc -shared -fPIC -o udev_stub.so udev_stub.c
