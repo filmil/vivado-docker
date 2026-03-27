@@ -1,4 +1,4 @@
-# Latest: 2025.1
+# Latest: 2025.2
 
 # vivado-docker
 
@@ -16,7 +16,7 @@
 ## Summary
 
 This repository provides a [Docker](https://docker.io) setup for AMD's [Vivado][viv]
-FPGA development tools, specifically version 2025.1.
+FPGA development tools, specifically version 2025.2.
 
 [viv]: https://en.wikipedia.org/wiki/Vivado
 
