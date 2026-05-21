@@ -73,6 +73,7 @@ docker run \
   -e DISPLAY="${DISPLAY:-}" \
   -e _JAVA_AWT_WM_NONREPARENTING=1 \
   -e XILINX_LOCAL_USER_DATA=no \
+  --device "/dev/bus/usb" \
   "xilinx-vivado:${VIVADO_VERSION}" \
   /bin/bash -c \
     "${PRELOAD_CMD}source ${VIVADO_PATH}/settings64.sh && cd /work && ${VIVADO_CMD}"
