@@ -111,7 +111,10 @@ RUN --mount=type=bind,source=${HOST_TOOL_ARCHIVE_NAME},target=/tmp/archive.tar \
         --location ${INSTALL_TARGET_DIR} \
         --agree XilinxEULA,3rdPartyEULA \
     && echo "Cleaning up extracted archive..." \
-    && rm -rf /tmp/vivado-extract /tmp/install_config.txt
+    && rm -rf /tmp/vivado-extract /tmp/install_config.txt \
+    && mkdir -p /etc/udev/rules.d \
+    && cd "${INSTALL_TARGET_DIR}/${VIVADO_VERSION}/Vivado/data/xicom/cable_drivers/lin64/install_script/install_drivers" \
+    && ./install_drivers
 
 COPY run.sh /
 RUN chmod a+x /run.sh
