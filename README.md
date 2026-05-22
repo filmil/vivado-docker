@@ -239,6 +239,20 @@ again sometimes helps. If persistent issues occur, consider checking Docker
 daemon logs for more specific errors or consulting Docker community forums for
 advice on handling large images.
 
+**Q: USB devices are not showing up in the Hardware Manager. Why?**
+
+A: Even though the generated Docker image has installed the USB drivers within
+itself, the host OS also needs the drivers installed. These can be extracted 
+from the Docker image using the following commands (note that if you use
+a different version than 2025.2, change the numbers):
+```
+docker create --name tmp xilinx-vivado:2025.2
+docker cp tmp:/opt/Xilinx/2025.2/data/xicom/cable_drivers ./cable_drivers
+```
+This will extract the cable drivers for both Windows and Linux in your
+current directory. Install the appropriate drivers on the host OS. 
+You may need to unplug and plug the USB device before the drivers work.
+
 ## Contribution
 
 Contributions are welcome! Please feel free to submit pull requests or open
