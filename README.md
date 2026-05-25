@@ -175,6 +175,7 @@ SRC_DIR=/path/to/fpga/project WORK_DIR=/path/to/output \
 | `WORK_DIR` | current directory | Host directory mounted at `/work` |
 | `VIVADO_CMD` | `vivado` (GUI) | Command to run inside container |
 | `ROSETTA` | auto-detect | Set to `1` to force libudev stub |
+| `USB_DEVICE_DIR` | None | Set to Host USB dir in order to enable USB |
 
 ## Troubleshooting/FAQ
 
@@ -240,6 +241,11 @@ daemon logs for more specific errors or consulting Docker community forums for
 advice on handling large images.
 
 **Q: USB devices are not showing up in the Hardware Manager. Why?**
+
+A: You need to set the environment variable USB_DEVICE_DIR to the host's 
+path to USB devices. On Ubuntu, this path is by default `/dev/bus/usb`
+
+**Q: USB devices are still not showing up. Why?**
 
 A: Even though the generated Docker image has installed the USB drivers within
 itself, the host OS also needs the drivers installed. These can be extracted 
