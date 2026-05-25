@@ -15,6 +15,8 @@
 #                   Example for batch: VIVADO_CMD="vivado -mode batch -source /src/build.tcl"
 #   ROSETTA         Set to "1" to enable libudev stub for Apple Silicon
 #                   (default: auto-detect via uname -m)
+#   USB_DEVICE_DIR  Host directory for mounted USB devices (default: no path)
+#                   Override to enable USB support. USB Drivers needs to be installed on host.
 
 set -euo pipefail
 set -x
@@ -30,6 +32,14 @@ VIVADO_PATH="/opt/Xilinx/${VIVADO_VERSION}/Vivado"
 # Paths — override via environment if needed
 SRC_DIR="${SRC_DIR:-$(pwd)}"
 WORK_DIR="${WORK_DIR:-$(pwd)}"
+
+# Add --device command only if USB path is provided
+# (default for Ubuntu is /dev/bus/usb)
+USB_DEVICE_DIR="${USB_DEVICE_DIR:-}"
+USB_CMD=""
+if [[ -n "${USB_DEVICE_DIR}" ]]; then
+  USB_CMD="--device $USB_DEVICE_DIR"
+fi
 
 mkdir -p "${WORK_DIR}"
 
@@ -73,7 +83,7 @@ docker run \
   -e DISPLAY="${DISPLAY:-}" \
   -e _JAVA_AWT_WM_NONREPARENTING=1 \
   -e XILINX_LOCAL_USER_DATA=no \
-  --device "/dev/bus/usb" \
+  ${USB_CMD} \
   "xilinx-vivado:${VIVADO_VERSION}" \
   /bin/bash -c \
     "${PRELOAD_CMD}source ${VIVADO_PATH}/settings64.sh && cd /work && ${VIVADO_CMD}"
