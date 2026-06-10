@@ -163,12 +163,15 @@ if [[ -n "${usb}" ]]; then
   USB_DEVICE_DIR="${usb}"
 fi
 
+VIVADO_CMD="${VIVADO_CMD:-vivado}"
 if [[ -n "${batch}" ]]; then
-  VIVADO_CMD="vivado -mode batch -source ${batch}"
+  VIVADO_CMD="${VIVADO_CMD} -mode batch -source ${batch}"
+elif [[ -n "${gui}" ]]; then
+  VIVADO_CMD="${VIVADO_CMD} -mode gui -source ${gui}"
 fi
-if [[ -n "${gui}" ]]; then
-  VIVADO_CMD="vivado -mode gui -source ${gui}"
-fi
+
+
+
 
 
 INTERACTIVE=()
@@ -210,7 +213,6 @@ fi
 
 # Default: interactive Vivado. Override VIVADO_CMD for batch mode.
 # For batch synthesis: VIVADO_CMD="vivado -mode batch -source /src/build.tcl"
-VIVADO_CMD="${VIVADO_CMD:-vivado}"
 
 # Conditional docker flags for platform differences
 DOCKER_ARGS=()
